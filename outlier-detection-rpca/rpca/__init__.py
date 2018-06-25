@@ -1,2 +1,2 @@
-from algo import rpca
+from algorithm import rpca
 from transformer import RobustPCA

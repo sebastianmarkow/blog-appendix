@@ -2,7 +2,7 @@
 
 from sklearn.base import TransformerMixin
 
-from algo import rpca
+from algorithm import rpca
 
 
 class RobustPCA(TransformerMixin):
