@@ -12,8 +12,8 @@ class RobustPCA(TransformerMixin):
                  max_iter=1000,
                  tol=1E-7):
 
-        if not (method == 'sparse' or method == 'lowrank'):
-            raise ValueError('method must be either `sparse` or `lowrank`')
+        if not (method == 'sparse' or method == 'recovery'):
+            raise ValueError('method must be either `sparse` or `recovery`')
 
         self._method = method
         self._mu = mu
@@ -21,10 +21,10 @@ class RobustPCA(TransformerMixin):
         self._tol = tol
 
     def transform(self, X):
-        self.L_, self.S_ = rpca(X, mu=self._mu, l=self._l, tol=self._tol)
+        self.A_, self.E_ = rpca(X, mu=self._mu, l=self._l, tol=self._tol)
         if self._method == 'sparse':
-            return self.S_
-        elif self._method == 'lowrank':
-            return self.L_
+            return self.E_
+        elif self._method == 'recovery':
+            return self.A_
         else:
             raise ValueError('unknown method')

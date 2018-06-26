@@ -13,9 +13,9 @@ def rpca(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     if not l:
         l = 1 / np.sqrt(np.max(M.shape))
 
-    L = np.zeros(M.shape)
-    S = np.zeros(M.shape)
     Y = np.zeros(M.shape)
+    A = np.zeros(M.shape)
+    E = np.zeros(M.shape)
 
     M_sign = np.sign(M)
     M_sign_norm2 = norm(M_sign, ord=2)
@@ -28,20 +28,20 @@ def rpca(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     i = 0
 
     while err > tol and i < max_iter:
-        U, S, V = svd(M - S + Y * (mu**-1), full_matrices=False)
-        L = np.dot(U, np.dot(np.diag(_shrink(S, mu)), V))
-        S = _shrink(M - L + Y * (mu**-1), l * mu)
-        Y = Y + mu * (M - L - S)
+        U, S, V = svd(M - E + Y * (mu**-1), full_matrices=False)
+        A = np.dot(U, np.dot(np.diag(_shrink(S, mu)), V))
+        E = _shrink(M - A + Y * (mu**-1), l * mu)
+        Y = Y + mu * (M - A - E)
 
-        err = _calc_error(M, L, S)
+        err = _calc_error(M, A, E)
         i += 1
 
-    return L, S
+    return A, E
 
 
-def _calc_error(M, L, S):
+def _calc_error(M, A, E):
     """"""
-    return norm(M - L - S, ord='fro') / norm(M, ord='fro')
+    return norm(M - A - E, ord='fro') / norm(M, ord='fro')
 
 
 def _shrink(M, t):
