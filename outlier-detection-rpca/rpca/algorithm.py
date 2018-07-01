@@ -8,7 +8,7 @@ from numpy.linalg import norm
 from numpy.linalg import svd
 
 
-def rpca(M, mu=None, l=None, tol=1E-7, max_iter=1000):
+def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     """Matrix recovery/decomposition using Robust Principal Component Analysis
     with Augmented Lagrangian Method (ALM)
 
@@ -25,8 +25,8 @@ def rpca(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     ----------
 
     M : array-like, shape (n_samples, n_features)
-        Matrix to decompose, where n_samples in the number of samples and n_features
-        is the number of features.
+        Matrix to decompose, where n_samples in the number of samples and
+        n_features is the number of features.
 
     mu : float (default 1.25 * ||M||_2)
         Parameter from the Augmented Lagrange Multiplier form of Principal

@@ -4,7 +4,7 @@ Robust Principal Component Analysis Scikit-Learn transformer
 
 from sklearn.base import TransformerMixin
 
-from algorithm import rpca
+from algorithm import rpca_alm
 
 
 class RobustPCA(TransformerMixin):
@@ -90,8 +90,8 @@ class RobustPCA(TransformerMixin):
         ----------
 
         X : array-like, shape (n_samples, n_features)
-            Matrix to decompose, where n_samples in the number of samples and n_features
-            is the number of features.
+            Matrix to decompose, where n_samples in the number of samples and
+            n_features is the number of features.
 
         Returns
         -------
@@ -100,7 +100,10 @@ class RobustPCA(TransformerMixin):
             Decomposed matrix, either sparse component (method `sparse`) or
             low-rank component (method `low_rank`)
         """
-        self.low_rank_, self.sparse_, self.error_ = rpca(X, mu=self._mu, l=self._l, tol=self._tol)
+        self.low_rank_, self.sparse_, self.error_ = rpca_alm(X,
+                                                             mu=self._mu,
+                                                             l=self._l,
+                                                             tol=self._tol)
         if self._method == 'sparse':
             return self.sparse_
         elif self._method == 'low_rank':
