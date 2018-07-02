@@ -73,7 +73,7 @@ class RobustPCA(TransformerMixin):
         options = ['sparse', 'low_rank']
 
         if method not in options:
-            raise ValueError('method must be one of %s' % options)
+            raise ValueError(f'method must be one of {options}')
 
         self._method = method
         self._mu = mu
