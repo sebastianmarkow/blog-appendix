@@ -74,11 +74,11 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     mutol = 1E7
 
     if not l:
-        l = np.max(M.shape)**-0.5
+        l = np.max(M.shape)**-.5
 
     M_sign = np.sign(M)
     norm_spectral = norm(M_sign, ord=2)
-    norm_inf = norm(M_sign, ord=np.inf) * (l**-1)
+    norm_inf = norm(M_sign, ord=np.inf)
     norm_dual = np.max([norm_spectral, norm_inf * l**-1])
 
     Y = M_sign * norm_dual**-1
@@ -89,10 +89,10 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
     i = 0
 
     while err > tol and i < max_iter:
-        U, S, V = svd(M - E + Y * (mu**-1), full_matrices=False)
+        U, S, V = svd(M - E + Y * mu**-1, full_matrices=False)
 
         A = np.dot(U, np.dot(np.diag(_shrink(S, mu**-1)), V))
-        E = _shrink(M - A + Y * (mu**-1), l * mu**-1)
+        E = _shrink(M - A + Y * mu**-1, l * mu**-1)
         Y = Y + mu * (M - A - E)
 
         err = _fro_error(M, A, E)
