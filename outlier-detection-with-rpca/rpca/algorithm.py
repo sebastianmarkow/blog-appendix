@@ -8,18 +8,24 @@ from numpy.linalg import norm
 from numpy.linalg import svd
 
 
-def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
+def rpca_alm(M, mu=None, l=None, mu_tol=1E7, tol=1E-7, max_iter=1000):
     """Matrix recovery/decomposition using Robust Principal Component Analysis
-    with Augmented Lagrangian Method (ALM)
 
     Decompose a rectengular matrix M into a low-rank component, and a sparse
-    component, by solving a convex program called Principal Component Pursuit.
+    component, by solving a convex minimization problem via Augmented Lagrangian
+    Method.
 
     minimize        ||A||_* + λ ||E||_1
     subject to      A + E = M
 
     where           ||A||_* is the nuclear norm of A (sum of singular values)
+                        - surrogate of matrix rank
                     ||E||_1 is the l1 norm of E (absolute values of elements)
+                        - surrogate of matrix sparseness
+
+    Relaxed to
+
+        L(A,E,Y,λ) .= ||A||_* + λ||E||_1 + <Y, M-A-E> + µ/2 ||M-A-E||_F^2
 
     Parameters
     ----------
@@ -28,12 +34,15 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
         Matrix to decompose, where n_samples in the number of samples and
         n_features is the number of features.
 
+    l : float (default 1/sqrt(max(m,n)), for m x n of M)
+        Parameter λ (lambda) of the convex problem ||A||_* + λ ||E||_1. [2]_
+
     mu : float (default 1.25 * ||M||_2)
-        Parameter from the Augmented Lagrange Multiplier form of Principal
+        Parameter µ (mu) of the Augmented Lagrange Multiplier form of Principal
         Component Pursuit (PCP). [2]_
 
-    l : float (default 1/sqrt(max(m,n)), for m x n of M)
-        Parameter of the convex problem ||A||_* + l ||E||_1. [2]_
+    mu_tol : float >= 0 (default 1E-7)
+        Weight parameter.
 
     tol : float >= 0 (default 1E-7)
         Tolerance for accuracy of matrix reconstruction of low rank and sparse
@@ -41,7 +50,6 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
 
     max_iter : int >= 0 (default 1000)
         Maximum number of iterations to perform.
-
 
     Returns
     -------
@@ -54,6 +62,7 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
 
     err : float
         Error of matrix reconstruction
+        ||M-A-E||_F / ||M||_F
 
     References
     ----------
@@ -70,8 +79,6 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
 
     if not mu:
         mu = 1.25 * norm(M, ord=2)
-
-    mutol = 1E7
 
     if not l:
         l = np.max(M.shape)**-.5
@@ -97,7 +104,7 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
 
         err = _fro_error(M, A, E)
         mu *= rho
-        mu = np.min([mu, mutol])
+        mu = np.min([mu, mu_tol])
         i += 1
 
     return A, E, err
@@ -105,7 +112,7 @@ def rpca_alm(M, mu=None, l=None, tol=1E-7, max_iter=1000):
 
 def _fro_error(M, A, E):
     """Error of matrix reconstruction"""
-    return norm(M - A - E, ord='fro') / norm(M, ord='fro')
+    return norm(M - A - E, ord='fro') * norm(M, ord='fro')**-1
 
 
 def _shrink(M, t):

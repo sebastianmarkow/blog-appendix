@@ -8,30 +8,40 @@ from algorithm import rpca_alm
 
 
 class RobustPCA(TransformerMixin):
-    """Robust Principal Component Analysis with Augmented Lagrangian Method
+    """Matrix recovery/decomposition using Robust Principal Component Analysis
 
     Decompose a rectengular matrix M into a low-rank component, and a sparse
-    component, by solving a convex program called Principal Component Pursuit.
+    component, by solving a convex minimization problem via Augmented Lagrangian
+    Method.
 
     minimize        ||A||_* + λ ||E||_1
     subject to      A + E = M
 
     where           ||A||_* is the nuclear norm of A (sum of singular values)
+                        - surrogate of matrix rank
                     ||E||_1 is the l1 norm of E (absolute values of elements)
+                        - surrogate of matrix sparseness
+
+    Relaxed to
+
+        L(A,E,Y,λ) .= ||A||_* + λ||E||_1 + <Y, M-A-E> + µ/2 ||M-A-E||_F^2
 
     Parameters
     ----------
 
-    method : string {sparse, low_rank}
-        sparse: Transformation will yield the sparse component
-        low_rank: Transformation will yield the low-rank component
-
-    mu : float (default 1.25 * ||M||_2)
-        Parameter from the Augmented Lagrange Multiplier form of Principal
-        Component Pursuit (PCP). [2]_
+    M : array-like, shape (n_samples, n_features)
+        Matrix to decompose, where n_samples in the number of samples and
+        n_features is the number of features.
 
     l : float (default 1/sqrt(max(m,n)), for m x n of M)
-        Parameter of the convex problem ||A||_* + l ||E||_1. [2]_
+        Parameter (lambda) of the convex problem ||A||_* + λ ||E||_1. [2]_
+
+    mu : float (default 1.25 * ||M||_2)
+        Parameter (mu) from the Augmented Lagrange Multiplier form of Principal
+        Component Pursuit (PCP). [2]_
+
+    mu_tol : float >= 0 (default 1E-7)
+        Weight parameter.
 
     tol : float >= 0 (default 1E-7)
         Tolerance for accuracy of matrix reconstruction of low rank and sparse
@@ -51,7 +61,7 @@ class RobustPCA(TransformerMixin):
 
     error_ : float
         Error of matrix reconstruction
-
+        ||M-A-E||_F / ||M||_F
 
     References
     ----------
@@ -65,8 +75,9 @@ class RobustPCA(TransformerMixin):
     """
 
     def __init__(self, method='sparse',
-                 mu=None,
                  l=None,
+                 mu=None,
+                 mu_tol=1E7,
                  tol=1E-7,
                  max_iter=1000):
 
@@ -76,12 +87,14 @@ class RobustPCA(TransformerMixin):
             raise ValueError(f'method must be one of {options}')
 
         self._method = method
-        self._mu = mu
         self._l = l
+        self._mu = mu
+        self._mu_tol = mu_tol
         self._tol = tol
 
         self.low_rank_ = None
         self.sparse_ = None
+        self.error_ = None
 
     def transform(self, X):
         """Matrix decomposition/recovery with RPCA and ALM
@@ -103,6 +116,7 @@ class RobustPCA(TransformerMixin):
         self.low_rank_, self.sparse_, self.error_ = rpca_alm(X,
                                                              mu=self._mu,
                                                              l=self._l,
+                                                             mu_tol=self._mu_tol,
                                                              tol=self._tol)
         if self._method == 'sparse':
             return self.sparse_
